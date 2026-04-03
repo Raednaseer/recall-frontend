@@ -193,7 +193,7 @@ function FileRow({ file, onDelete, isDeleting }) {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => onDelete(file.file_id)}
+                onClick={() => onDelete(file._id)}
                 disabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
@@ -323,19 +323,16 @@ export default function DocumentsPage() {
       formData.append('file', file)
 
       const url = collection 
-        ? `${API_URL}/rag/upload?collection=${encodeURIComponent(collection)}`
-        : `${API_URL}/rag/upload`
+        ? `/rag/upload?collection=${encodeURIComponent(collection)}`
+        : `/rag/upload`
 
       // Simulated progress for UX
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => Math.min(prev + 10, 90))
       }, 200)
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
         body: formData,
       })
 
@@ -391,7 +388,7 @@ export default function DocumentsPage() {
       })
 
       if (response.ok) {
-        setFiles(prev => prev.filter(f => f.file_id !== fileId))
+        setFiles(prev => prev.filter(f => f._id !== fileId))
         toast.success('File deleted')
       } else {
         toast.error('Failed to delete file')
@@ -508,10 +505,10 @@ export default function DocumentsPage() {
                 <tbody>
                   {sortedFiles.map(file => (
                     <FileRow
-                      key={file.file_id}
+                      key={file._id}
                       file={file}
                       onDelete={handleDelete}
-                      isDeleting={deletingId === file.file_id}
+                      isDeleting={deletingId === file._id}
                     />
                   ))}
                 </tbody>

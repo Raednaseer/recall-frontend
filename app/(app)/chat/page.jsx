@@ -42,7 +42,7 @@ function EmptyState({ onSuggestionClick }) {
 
 export default function ChatPage() {
   const router = useRouter()
-  const { authFetch, API_URL } = useAuth()
+  const { authFetch, API_URL, token } = useAuth()
   const [messages, setMessages] = useState([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
@@ -79,13 +79,10 @@ export default function ChatPage() {
 
   // Auto-scroll on new messages
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollElement = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight
-      }
-    }
-  }, [messages])
+  if (scrollRef.current) {
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  }
+}, [messages])
 
   const handleSend = useCallback(async (content) => {
     if (isStreaming) return
@@ -107,12 +104,14 @@ export default function ChatPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Authorization': `Bearer ${token || ''}`,
         },
         body: JSON.stringify({
           query: content,
           conversation_id: conversationId,
-          collection: selectedCollection,
+          ...(selectedCollection && { collection: selectedCollection }),
         }),
         signal: abortControllerRef.current.signal,
       })
@@ -272,7 +271,7 @@ export default function ChatPage() {
       setIsStreaming(false)
       setIsThinking(false)
     }
-  }, [conversationId, selectedCollection, isStreaming, authFetch, API_URL, router])
+  }, [conversationId, selectedCollection, isStreaming, authFetch, API_URL, router, token])
 
   const handleSuggestionClick = (text) => {
     handleSend(text)
@@ -281,11 +280,12 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex-1 flex flex-col min-h-0">
       {isEmpty ? (
         <EmptyState onSuggestionClick={handleSuggestionClick} />
       ) : (
-        <ScrollArea ref={scrollRef} className="flex-1 px-4">
+        <div className="flex-1 relative min-h-0">
+          <ScrollArea viewportRef={scrollRef} className="absolute inset-0 px-4">
           <div className="max-w-3xl mx-auto py-6 space-y-6">
             {messages.map((message, i) => (
               <ChatMessage
@@ -296,7 +296,8 @@ export default function ChatPage() {
               />
             ))}
           </div>
-        </ScrollArea>
+          </ScrollArea>
+        </div>
       )}
 
       <ChatInput

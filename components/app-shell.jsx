@@ -123,7 +123,7 @@ export function AppShell({ children }) {
       })
 
       if (response.ok) {
-        setConversations(prev => prev.filter(c => c.id !== conversationId))
+        setConversations(prev => prev.filter(c => c._id !== conversationId))
         
         if (activeConversationId === conversationId) {
           router.push('/chat')
@@ -185,7 +185,7 @@ export function AppShell({ children }) {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <MobileHeader onOpenSidebar={() => setSidebarOpen(true)} />
-        <div className="flex-1 overflow-hidden pt-12 md:pt-0">
+        <div className="flex-1 flex flex-col overflow-hidden pt-12 md:pt-0 relative">
           {typeof children === 'function' 
             ? children({ 
                 selectedCollection, 

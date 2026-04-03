@@ -308,10 +308,10 @@ function ChatMessageComponent({ message, isStreaming = false, isThinking = false
     >
       <div
         className={cn(
-          'relative max-w-[85%] rounded-lg px-4 py-3 text-[14px]',
+          'relative px-5 py-3.5 text-[15px] leading-relaxed shadow-sm transition-all duration-300 ease-out',
           isUser 
-            ? 'max-w-[70%] bg-accent text-accent-foreground' 
-            : 'bg-transparent'
+            ? 'max-w-[75%] rounded-[24px] rounded-br-[4px] bg-primary text-primary-foreground shadow-primary/10' 
+            : 'w-full max-w-full rounded-[24px] rounded-tl-[4px] bg-transparent text-foreground'
         )}
       >
         <MessageContent 

@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 
 export default function ConversationPage({ params }) {
   const { conversationId } = use(params)
-  const { authFetch, API_URL } = useAuth()
+  const { authFetch, API_URL, token } = useAuth()
   const [messages, setMessages] = useState([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
@@ -75,13 +75,10 @@ export default function ConversationPage({ params }) {
 
   // Auto-scroll on new messages
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollElement = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight
-      }
-    }
-  }, [messages])
+  if (scrollRef.current) {
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  }
+}, [messages])
 
   const handleSend = useCallback(async (content) => {
     if (isStreaming) return
@@ -103,12 +100,14 @@ export default function ConversationPage({ params }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Authorization': `Bearer ${token || ''}`,
         },
         body: JSON.stringify({
           query: content,
           conversation_id: conversationId,
-          collection: selectedCollection,
+          ...(selectedCollection && { collection: selectedCollection }),
         }),
         signal: abortControllerRef.current.signal,
       })
@@ -254,11 +253,11 @@ export default function ConversationPage({ params }) {
       setIsStreaming(false)
       setIsThinking(false)
     }
-  }, [conversationId, selectedCollection, isStreaming, API_URL])
+  }, [conversationId, selectedCollection, isStreaming, API_URL, token])
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 flex items-center justify-center">
           <div className="space-y-3 w-full max-w-3xl px-4">
             {[...Array(3)].map((_, i) => (
@@ -283,8 +282,9 @@ export default function ConversationPage({ params }) {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <ScrollArea ref={scrollRef} className="flex-1 px-4">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 relative min-h-0">
+        <ScrollArea viewportRef={scrollRef} className="absolute inset-0 px-4">
         <div className="max-w-3xl mx-auto py-6 space-y-6">
           {messages.map((message, i) => (
             <ChatMessage
@@ -296,6 +296,7 @@ export default function ConversationPage({ params }) {
           ))}
         </div>
       </ScrollArea>
+      </div>
 
       <ChatInput
         onSend={handleSend}

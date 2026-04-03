@@ -75,16 +75,16 @@ function ConversationItem({ conversation, isActive, onDelete }) {
   return (
     <div
       className={cn(
-        'group relative flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer transition-colors',
+        'group relative flex items-center justify-between px-3 py-2.5 my-0.5 rounded-lg border transition-all duration-300 ease-out',
         isActive 
-          ? 'bg-sidebar-accent border-l-2 border-l-sidebar-primary' 
-          : 'hover:bg-sidebar-accent/50'
+          ? 'bg-sidebar-accent border-sidebar-border/50 text-sidebar-foreground shadow-[rgba(0,0,0,0.05)_0px_2px_4px] font-medium' 
+          : 'border-transparent text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
       )}
       onMouseEnter={() => setShowDelete(true)}
       onMouseLeave={() => setShowDelete(false)}
     >
       <Link 
-        href={`/chat/${conversation.id}`} 
+        href={`/chat/${conversation._id}`} 
         className="flex-1 truncate text-[13px] text-sidebar-foreground"
       >
         {conversation.title || 'New conversation'}
@@ -99,7 +99,7 @@ function ConversationItem({ conversation, isActive, onDelete }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
             <DropdownMenuItem
-              onClick={() => onDelete(conversation.id)}
+              onClick={() => onDelete(conversation._id)}
               className="text-destructive focus:text-destructive"
             >
               Delete
@@ -122,9 +122,9 @@ function ConversationGroup({ title, conversations, activeId, onDelete }) {
       <div className="space-y-0.5">
         {conversations.map(conv => (
           <ConversationItem
-            key={conv.id}
+            key={conv._id}
             conversation={conv}
-            isActive={conv.id === activeId}
+            isActive={conv._id === activeId}
             onDelete={onDelete}
           />
         ))}
