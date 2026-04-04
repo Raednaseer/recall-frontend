@@ -272,13 +272,13 @@ function FileRow({ file, onDelete, isDeleting }) {
         </Badge>
       </td>
       <td className="px-4 py-3 text-[13px] text-muted-foreground">
-        {file.chunks}
+        {file.chunk_count !== undefined ? file.chunk_count : file.chunks}
       </td>
       <td className="px-4 py-3 text-[13px] text-muted-foreground">
         <div className="flex items-center justify-between">
           <span>
-            {file.created_at 
-              ? formatDistanceToNow(new Date(file.created_at), { addSuffix: true })
+            {file.uploaded_at || file.created_at 
+              ? formatDistanceToNow(new Date(file.uploaded_at || file.created_at), { addSuffix: true })
               : '-'
             }
           </span>
@@ -320,7 +320,7 @@ export default function DocumentsPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [deletingId, setDeletingId] = useState(null)
-  const [sortField, setSortField] = useState('created_at')
+  const [sortField, setSortField] = useState('uploaded_at')
   const [sortDirection, setSortDirection] = useState('desc')
   const [uploadSuccess, setUploadSuccess] = useState(null)
 
@@ -415,7 +415,7 @@ export default function DocumentsPage() {
       
       setUploadSuccess({
         filename: data.filename,
-        chunks: data.chunks,
+        chunks: data.chunk_count !== undefined ? data.chunk_count : data.chunks,
         collection: data.collection || collection,
       })
 
@@ -467,12 +467,12 @@ export default function DocumentsPage() {
     let aVal = a[sortField]
     let bVal = b[sortField]
     
-    if (sortField === 'created_at') {
+    if (sortField === 'uploaded_at' || sortField === 'created_at') {
       aVal = new Date(aVal || 0).getTime()
       bVal = new Date(bVal || 0).getTime()
     }
     
-    if (sortField === 'chunks') {
+    if (sortField === 'chunk_count' || sortField === 'chunks') {
       aVal = aVal || 0
       bVal = bVal || 0
     }
@@ -543,15 +543,15 @@ export default function DocumentsPage() {
                     </th>
                     <th 
                       className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground"
-                      onClick={() => handleSort('chunks')}
+                      onClick={() => handleSort('chunk_count')}
                     >
-                      Chunks <SortIcon field="chunks" />
+                      Chunks <SortIcon field="chunk_count" />
                     </th>
                     <th 
                       className="px-4 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground"
-                      onClick={() => handleSort('created_at')}
+                      onClick={() => handleSort('uploaded_at')}
                     >
-                      Uploaded <SortIcon field="created_at" />
+                      Uploaded <SortIcon field="uploaded_at" />
                     </th>
                   </tr>
                 </thead>
