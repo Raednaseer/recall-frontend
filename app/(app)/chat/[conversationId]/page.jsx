@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback, use } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { ChatMessage } from '@/components/chat-message'
 import { ChatInput } from '@/components/chat-input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 
 export default function ConversationPage({ params }) {
@@ -28,13 +27,39 @@ export default function ConversationPage({ params }) {
         const response = await authFetch(`/history/${conversationId}`)
         if (response.ok) {
           const data = await response.json()
-          // Transform conversation messages to our format
+          
+          // Backend format: { query, answer, sources } turn pairs
+          // `answer` may contain <think>...</think> tags for reasoning
           const conversationMessages = data.messages || []
-          setMessages(conversationMessages.map(m => ({
-            role: m.role,
-            content: m.content,
-            sources: m.sources || [],
-          })))
+          const parsed = []
+
+          for (const m of conversationMessages) {
+            if (m.query) {
+              parsed.push({ role: 'user', content: m.query, sources: [] })
+            }
+
+            const rawAnswer = m.answer || m.response || m.content || ''
+            if (rawAnswer || m.sources?.length) {
+              // Parse <think> tags out of the answer
+              let reasoning = ''
+              let content = rawAnswer
+
+              const thinkMatch = rawAnswer.match(/<think>([\s\S]*?)<\/think>/i)
+              if (thinkMatch) {
+                reasoning = thinkMatch[1].trim()
+                content = rawAnswer.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+              }
+
+              parsed.push({
+                role: 'assistant',
+                content,
+                reasoning,
+                sources: m.sources || [],
+              })
+            }
+          }
+
+          setMessages(parsed)
         }
       } catch (error) {
         console.error('Failed to fetch conversation:', error)
@@ -283,19 +308,19 @@ export default function ConversationPage({ params }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      <div className="flex-1 relative min-h-0">
-        <ScrollArea viewportRef={scrollRef} className="absolute inset-0 px-4">
-        <div className="max-w-3xl mx-auto py-6 space-y-6">
-          {messages.map((message, i) => (
-            <ChatMessage
-              key={i}
-              message={message}
-              isStreaming={isStreaming && i === messages.length - 1 && message.role === 'assistant'}
-              isThinking={isThinking && i === messages.length - 1 && message.role === 'assistant'}
-            />
-          ))}
+      <div className="flex-1 min-h-0">
+        <div ref={scrollRef} className="h-full overflow-y-auto px-4">
+          <div className="max-w-3xl mx-auto pt-6 pb-4 space-y-6">
+            {messages.map((message, i) => (
+              <ChatMessage
+                key={i}
+                message={message}
+                isStreaming={isStreaming && i === messages.length - 1 && message.role === 'assistant'}
+                isThinking={isThinking && i === messages.length - 1 && message.role === 'assistant'}
+              />
+            ))}
+          </div>
         </div>
-      </ScrollArea>
       </div>
 
       <ChatInput

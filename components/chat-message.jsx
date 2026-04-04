@@ -104,18 +104,13 @@ function ReasoningToggle({ reasoning }) {
         {isExpanded ? 'Hide reasoning' : 'View reasoning'}
       </button>
       
-      <div
-        className={cn(
-          'overflow-hidden transition-all duration-200 ease-out',
-          isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
-        )}
-      >
-        <div className="mt-2 p-4 rounded-md bg-surface-elevated border-l-2 border-muted-foreground/30">
+      {isExpanded && (
+        <div className="mt-2 p-4 rounded-md bg-surface-elevated border-l-2 border-muted-foreground/30 max-h-60 overflow-y-auto">
           <p className="text-[13px] text-muted-foreground italic whitespace-pre-wrap leading-relaxed">
             {reasoning}
           </p>
         </div>
-      </div>
+      )}
     </div>
   )
 }

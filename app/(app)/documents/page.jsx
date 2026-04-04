@@ -35,8 +35,9 @@ import { formatDistanceToNow } from 'date-fns'
 
 function DropZone({ onUpload, isUploading, progress, collections }) {
   const [isDragging, setIsDragging] = useState(false)
-  const [collection, setCollection] = useState('')
+  const [collection, setCollection] = useState('default')
   const [openCollectionPicker, setOpenCollectionPicker] = useState(false)
+  const [newCollectionInput, setNewCollectionInput] = useState('')
   const fileInputRef = useRef(null)
 
   const handleDragOver = (e) => {
@@ -66,8 +67,113 @@ function DropZone({ onUpload, isUploading, progress, collections }) {
     e.target.value = ''
   }
 
+  const handleSelectCollection = (value) => {
+    setCollection(value)
+    setOpenCollectionPicker(false)
+    setNewCollectionInput('')
+  }
+
+  const handleCreateCollection = () => {
+    const name = newCollectionInput.trim()
+    if (name) {
+      setCollection(name)
+      setOpenCollectionPicker(false)
+      setNewCollectionInput('')
+    }
+  }
+
+  // Filter collections based on input
+  const filteredCollections = newCollectionInput
+    ? collections.filter(col => col.toLowerCase().includes(newCollectionInput.toLowerCase()))
+    : collections
+
+  // Show "create new" option if typed text doesn't exactly match any existing collection
+  const showCreateOption = newCollectionInput.trim() && 
+    !collections.some(col => col.toLowerCase() === newCollectionInput.trim().toLowerCase())
+
   return (
     <div className="mb-6">
+      {/* Collection selector - prominent position */}
+      <div className="mb-3 flex items-center gap-3">
+        <span className="text-[13px] text-muted-foreground shrink-0">Upload to:</span>
+        <Popover open={openCollectionPicker} onOpenChange={setOpenCollectionPicker}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={openCollectionPicker}
+              className="h-8 justify-between text-[13px] min-w-[180px] gap-2"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">/</span>
+                {collection}
+              </span>
+              <ArrowDown className="h-3 w-3 text-muted-foreground shrink-0" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[240px] p-0" align="start">
+            <div className="p-2 border-b border-border">
+              <Input
+                placeholder="Search or create collection..."
+                value={newCollectionInput}
+                onChange={(e) => setNewCollectionInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (showCreateOption) {
+                      handleCreateCollection()
+                    } else if (filteredCollections.length === 1) {
+                      handleSelectCollection(filteredCollections[0])
+                    }
+                  }
+                }}
+                className="h-8 text-[13px]"
+                autoFocus
+              />
+            </div>
+            <div className="max-h-48 overflow-y-auto p-1">
+              {/* Existing collections */}
+              {filteredCollections.map(col => (
+                <button
+                  key={col}
+                  onClick={() => handleSelectCollection(col)}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] text-left transition-colors hover:bg-accent/10',
+                    collection === col && 'bg-accent/10 text-accent'
+                  )}
+                >
+                  <Check
+                    className={cn(
+                      'h-3.5 w-3.5 shrink-0',
+                      collection === col ? 'opacity-100 text-accent' : 'opacity-0'
+                    )}
+                  />
+                  <span className="text-muted-foreground">/</span>
+                  {col}
+                </button>
+              ))}
+
+              {/* Create new collection option */}
+              {showCreateOption && (
+                <button
+                  onClick={handleCreateCollection}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] text-left transition-colors hover:bg-accent/10 text-accent border-t border-border mt-1 pt-2"
+                >
+                  <span className="text-accent font-medium">+</span>
+                  Create "{newCollectionInput.trim()}"
+                </button>
+              )}
+
+              {filteredCollections.length === 0 && !showCreateOption && (
+                <div className="px-2 py-3 text-center text-[12px] text-muted-foreground">
+                  No collections found
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Drop zone */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -101,63 +207,10 @@ function DropZone({ onUpload, isUploading, progress, collections }) {
               Drop files here or click to upload
             </p>
             <p className="text-[12px] text-muted-foreground mt-1">
-              PDF, TXT · Max 10 MB
+              PDF, TXT · Max 10 MB · Uploading to <span className="text-foreground font-medium">/{collection}</span>
             </p>
           </>
         )}
-      </div>
-
-      {/* Collection selector */}
-      <div className="mt-3 flex items-center gap-2">
-        <span className="text-[13px] text-muted-foreground">/</span>
-        <Popover open={openCollectionPicker} onOpenChange={setOpenCollectionPicker}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openCollectionPicker}
-              className="h-8 justify-between text-[13px] min-w-[160px]"
-            >
-              {collection || 'Select collection...'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0">
-            <Command>
-              <CommandInput 
-                placeholder="Type or select..." 
-                value={collection}
-                onValueChange={setCollection}
-              />
-              <CommandList>
-                <CommandEmpty>
-                  <span className="text-[12px] text-muted-foreground">
-                    Press enter to create &quot;{collection}&quot;
-                  </span>
-                </CommandEmpty>
-                <CommandGroup>
-                  {collections.map(col => (
-                    <CommandItem
-                      key={col}
-                      value={col}
-                      onSelect={(value) => {
-                        setCollection(value)
-                        setOpenCollectionPicker(false)
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          collection === col ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      {col}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
       </div>
     </div>
   )

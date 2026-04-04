@@ -61,7 +61,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="px-4 pb-4 pt-2">
+    <div className="px-4 pb-4 pt-2 shrink-0">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-end gap-2 p-2 rounded-xl border border-border bg-surface">
           {/* Collection Selector */}
